@@ -1,27 +1,44 @@
 <html>
 <head>
-<script src="PopEngineHtmlComponent.js" type=module></script>
+<!-- script src="PopEngineHtmlComponent.js" type=module></script> -->
 <style>
 @import "Index.css";
 
-popengine-canvas
+
+body
 {
-	display:	block;
-	background:	black;
+	display:		flex;
+	flex-direction: column;
+}
+
+popengine-canvas,
+canvas
+{
+	flex-grow:	1;
+	background:	blue;
+	/*
 	position:	absolute;
 	left:		2vmin;
 	top:		2vmin;
 	right:		2vmin;
 	bottom:		2vmin;
+	*/
 }
 
 </style>
 </head>
 <body>
 
-<popengine-canvas></popengine-canvas>
+<!-- <popengine-canvas></popengine-canvas> -->
+
+<canvas></canvas>
 
 <script type=module>
+import Bootup from './PopTree.js'
+
+const Canvas = document.querySelector('canvas');
+Bootup(Canvas);
+
 
 </script>
 

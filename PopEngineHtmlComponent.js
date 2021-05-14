@@ -20,6 +20,9 @@ export default class PopEngineCanvas extends HTMLElement
 	get value()			{	return this.getAttribute('value');	}
 	set value(newValue)	{	this.setAttribute('value', newValue);	}
 
+	async Bootup()
+	{
+	}
 
 	CreateCanvas()
 	{
@@ -84,9 +87,9 @@ export default class PopEngineCanvas extends HTMLElement
 	
 	connectedCallback()
 	{
-		this.LoadValues();
+		//this.LoadValues();
 		console.log(`connectedCallback`);
-		this.LoadedValues = true;
+		//this.LoadedValues = true;
 		this.Bootup().then(this.OnFinished.bind(this)).catch(this.OnError.bind(this));
 	}
 	
