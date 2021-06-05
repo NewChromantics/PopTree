@@ -55,7 +55,7 @@ uniform float TimeSecs;
 const vec3 WorldUp = vec3(0,-1,0);
 const float FloorY = 2.0;
 #define FAR_Z		40.0
-#define MAX_STEPS	60
+#define MAX_STEPS	120
 
 
 float Range(float Min,float Max,float Value)
@@ -112,8 +112,31 @@ float PingPongNormal(float Normal)
 	return Normal;
 }
 
+
+float sdBox( vec3 p, vec3 b )
+{
+	vec3 q = abs(p) - b;
+	return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+}
+
+float DistanceToBox(vec3 Position,vec3 BoxCenter,vec3 BoxRadius)
+{
+	return sdBox( Position-BoxCenter, BoxRadius );
+}
+
 float DistanceToSphere(vec3 Position)
 {
+	//	bend shape
+	vec3 p = Position;
+	float k = 2.70;//TimeSecs*0.1; // or some other amount
+    float c = cos(k*p.x);
+    float s = sin(k*p.x);
+    mat2  m = mat2(c,-s,s,c);
+    vec3  q = vec3(m*p.xy,p.z);
+    
+    Position = q;
+	return DistanceToBox( Position, Sphere.xyz, Sphere.www );
+	
 	//float SphereRadius = PingPongNormal(fract(TimeSecs)) * Sphere.w;
 	float SphereRadius = Sphere.w;
 	float Distance = length(Sphere.xyz - Position);
@@ -193,6 +216,7 @@ vec3 calcNormal( in vec3 pos )
 
 float HeatToShadow(float Heat)
 {
+	return Heat > 0.0 ? 1.0 : 0.0;
 	return clamp( Range( 0.0, 0.5, Heat ), 0.0, 1.0 );
 }
 
@@ -211,10 +235,11 @@ void main()
 	}
 	
 	vec3 Colour;
+	vec3 Normal = calcNormal(Intersection.xyz);
 	{
-		vec3 Normal = calcNormal(Intersection.xyz);
 		Colour = Range3( vec3(-1,-1,-1), vec3(1,1,1), Normal );
 	}
+	Colour = mix( Background, Colour, Intersection.w );
 
 	if ( DrawNormals )
 	{
@@ -234,8 +259,11 @@ void main()
 	//	do a hard shadow pass by shooting a ray to the sun
 	if ( DrawShadows )
 	{
-		vec3 DirToLight = vec3(0,-1,0);
-		vec3 PositionToLight = Intersection.xyz+(DirToLight*0.005);
+		//vec3 DirToLight = vec3(0.001,-0.99,0.001);
+		vec3 LightPos = vec3( sin(TimeSecs)*20.0, 50.0, cos(TimeSecs)*20.0 );
+		vec3 DirToLight = normalize(Intersection.xyz - LightPos);
+		//vec3 PositionToLight = Intersection.xyz+(Normal*0.002);
+		vec3 PositionToLight = Intersection.xyz+(DirToLight*0.003);
 		vec4 LightIntersection = GetSceneIntersection( PositionToLight, DirToLight );
 		float Shadow = HeatToShadow( LightIntersection.w );
 		Colour = mix( Colour, vec3(0,0,0), Shadow );
