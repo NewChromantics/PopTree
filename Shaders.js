@@ -130,12 +130,31 @@ float DistanceToBox(vec3 Position,vec3 BoxCenter,vec3 BoxRadius)
 	return sdBox( Position-BoxCenter, BoxRadius );
 }
 
+float rand(vec3 co)
+{
+	return fract(sin(dot(co, vec3(12.9898, 78.233, 54.53))) * 43758.5453);
+}
+
 vec3 Repeat(vec3 Position,float c)
 {
 	//	move to center of 0..c before modulous
 	Position += c * 0.5;
+
+	//vec3 Grid3 = floor( Position / c );
+	vec3 Grid3 = floor( Position / c );
+
 	Position = mod( Position, c );
+		
 	Position -= c * 0.5;
+	
+	//	position randomly inside the repeat cube
+	//	based on which cube we're in
+	float Randf = mix( -0.5, 0.5, rand(Grid3) );
+	Randf *= 0.4;
+	Position += c * vec3(Randf,Randf,Randf);
+	
+	
+	
 	return Position;
 }
 
@@ -154,9 +173,9 @@ vec3 BendShape(vec3 Position, float k)
 
 float DistanceToSphere(vec3 Position)
 {
-	Position = Repeat( Position, 4.0 );
+	Position = Repeat( Position, Sphere.w * 10.0 );
 	
-	Position = BendShape( Position, 1.0);//2.699 );
+	//Position = BendShape( Position, 1.0);//2.699 );
 
 	return DistanceToBox( Position, Sphere.xyz, Sphere.www );
 	
