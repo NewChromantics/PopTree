@@ -128,7 +128,7 @@ float DistanceToSphere(vec3 Position)
 {
 	//	bend shape
 	vec3 p = Position;
-	float k = 2.70;//TimeSecs*0.1; // or some other amount
+	float k = 2.699;//TimeSecs*0.1; // or some other amount
     float c = cos(k*p.x);
     float s = sin(k*p.x);
     mat2  m = mat2(c,-s,s,c);
