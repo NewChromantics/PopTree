@@ -54,8 +54,9 @@ uniform float TimeSecs;
 
 const vec3 WorldUp = vec3(0,-1,0);
 const float FloorY = 2.0;
-#define FAR_Z		40.0
+#define FAR_Z		80.0
 #define MAX_STEPS	120
+#define CLOSEENOUGH_FOR_HIT	0.001
 
 
 float Range(float Min,float Max,float Value)
@@ -69,6 +70,11 @@ vec3 Range3(vec3 Min,vec3 Max,vec3 Value)
 	Value.y = Range( Min.y, Max.y, Value.y );
 	Value.z = Range( Min.z, Max.z, Value.z );
 	return Value;
+}
+
+float Range01(float Min,float Max,float Value)
+{
+	return clamp( Range(Min,Max,Value), 0.0, 1.0 );
 }
 
 vec3 ScreenToWorld(float2 uv,float z)
@@ -124,17 +130,34 @@ float DistanceToBox(vec3 Position,vec3 BoxCenter,vec3 BoxRadius)
 	return sdBox( Position-BoxCenter, BoxRadius );
 }
 
-float DistanceToSphere(vec3 Position)
+vec3 Repeat(vec3 Position,float c)
+{
+	//	move to center of 0..c before modulous
+	Position += c * 0.5;
+	Position = mod( Position, c );
+	Position -= c * 0.5;
+	return Position;
+}
+
+vec3 BendShape(vec3 Position, float k)
 {
 	//	bend shape
 	vec3 p = Position;
-	float k = 2.699;//TimeSecs*0.1; // or some other amount
-    float c = cos(k*p.x);
-    float s = sin(k*p.x);
-    mat2  m = mat2(c,-s,s,c);
-    vec3  q = vec3(m*p.xy,p.z);
-    
-    Position = q;
+	//float k = 2.699;//TimeSecs*0.1; // or some other amount
+	float c = cos(k*p.x);
+	float s = sin(k*p.x);
+	mat2  m = mat2(c,-s,s,c);
+	vec3  q = vec3(m*p.xy,p.z);
+
+	return q;
+}
+
+float DistanceToSphere(vec3 Position)
+{
+	Position = Repeat( Position, 4.0 );
+	
+	Position = BendShape( Position, 1.0);//2.699 );
+
 	return DistanceToBox( Position, Sphere.xyz, Sphere.www );
 	
 	//float SphereRadius = PingPongNormal(fract(TimeSecs)) * Sphere.w;
@@ -169,7 +192,7 @@ float map(vec3 Position)
 vec4 GetSceneIntersection(vec3 RayPos,vec3 RayDir)
 {
 	RayDir = normalize(RayDir);
-	const float CloseEnough = 0.0001;
+	const float CloseEnough = CLOSEENOUGH_FOR_HIT;
 	const float MinStep = CloseEnough;
 	const float MaxDistance = FAR_Z;
 	const int MaxSteps = MAX_STEPS;
@@ -239,7 +262,7 @@ void main()
 	{
 		Colour = Range3( vec3(-1,-1,-1), vec3(1,1,1), Normal );
 	}
-	Colour = mix( Background, Colour, Intersection.w );
+	//Colour = mix( Background, Colour, Intersection.w );
 
 	if ( DrawNormals )
 	{
@@ -263,10 +286,19 @@ void main()
 		vec3 LightPos = vec3( sin(TimeSecs)*20.0, 50.0, cos(TimeSecs)*20.0 );
 		vec3 DirToLight = normalize(Intersection.xyz - LightPos);
 		//vec3 PositionToLight = Intersection.xyz+(Normal*0.002);
-		vec3 PositionToLight = Intersection.xyz+(DirToLight*0.003);
+		vec3 PositionToLight = Intersection.xyz+(DirToLight*0.001);
 		vec4 LightIntersection = GetSceneIntersection( PositionToLight, DirToLight );
-		float Shadow = HeatToShadow( LightIntersection.w );
-		Colour = mix( Colour, vec3(0,0,0), Shadow );
+
+		if ( LightIntersection.w > 0.0 )
+		{
+			//float Shadow = HeatToShadow( LightIntersection.w );
+			//float Shadow = 1.0;
+			float Shadow = Range01( 50.0, 0.0, length( LightIntersection.xyz - Intersection.xyz )+10.0 );
+			Shadow *= LightIntersection.w;
+			Shadow = 0.9;
+			Colour = mix( Colour, vec3(0,0,0), Shadow );
+			//Colour = vec3(0,0,0);
+		}
 	}
 	
 /*
