@@ -235,7 +235,8 @@ void main()
 	if ( DrawShadows )
 	{
 		vec3 DirToLight = vec3(0,-1,0);
-		vec4 LightIntersection = GetSceneIntersection( Intersection.xyz+(DirToLight*0.01), DirToLight );
+		vec3 PositionToLight = Intersection.xyz+(DirToLight*0.005);
+		vec4 LightIntersection = GetSceneIntersection( PositionToLight, DirToLight );
 		float Shadow = HeatToShadow( LightIntersection.w );
 		Colour = mix( Colour, vec3(0,0,0), Shadow );
 	}
