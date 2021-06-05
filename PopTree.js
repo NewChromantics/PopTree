@@ -15,7 +15,8 @@ void main()
 */
 let Time = 0;
 let Camera = new PopCamera();
-
+Camera.Position[1] = -2;
+Camera.Position[2] = 5;
 
 function ControlCamera_MouseWheel(x,y,Button,Scroll)
 {
@@ -51,7 +52,7 @@ function ControlCamera_MouseUp()
 }
 
 
-function GetRenderCommands(Assets)
+function GetRenderCommands(Assets,ScreenRect)
 {
 	const Commands = [];
 	
@@ -71,9 +72,11 @@ function GetRenderCommands(Assets)
 		const Uniforms = {};
 		Uniforms.TimeSecs = (Pop.GetTimeNowMs() / 1000) % 60;
 		const PopMath = Pop.Math;
-		const RenderViewport = [0,0,1,1];
+		let ProjectionViewport = ScreenRect;
+		ProjectionViewport[0] = 0;
+		ProjectionViewport[1] = 0; 
 		const WorldToCameraMatrix = Camera.GetWorldToCameraMatrix();
-		const CameraProjectionMatrix = Camera.GetProjectionMatrix( RenderViewport );
+		const CameraProjectionMatrix = Camera.GetProjectionMatrix( ProjectionViewport );
 		const ScreenToCameraTransform = PopMath.MatrixInverse4x4( CameraProjectionMatrix );
 		const CameraToWorldTransform = PopMath.MatrixInverse4x4( WorldToCameraMatrix );
 		//const LocalToWorldTransform = Camera.GetLocalToWorldFrustumTransformMatrix();
@@ -110,7 +113,8 @@ async function RenderLoop(Canvas)
 	
 	while ( true )
 	{
-		const RenderCommands = GetRenderCommands(Assets);
+		const ScreenRect = RenderContext.GetScreenRect();
+		const RenderCommands = GetRenderCommands(Assets,ScreenRect);
 		await RenderContext.Render(RenderCommands);
 		await Pop.Yield(10);
 	}
